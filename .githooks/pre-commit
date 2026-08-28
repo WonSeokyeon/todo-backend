@@ -1,0 +1,87 @@
+#!/bin/sh
+#
+# pre-commit — 백엔드 커밋 전 빠른 안전 검사
+#
+# husky 대신 core.hooksPath 를 사용한다. (Java 프로젝트에 Node 의존성을 넣지 않기 위함)
+# 우회가 필요하면: git commit --no-verify
+#
+
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+FAILED=0
+
+# 스테이징된 파일 목록 (추가/복사/수정된 것만)
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+# ────────────────────────────────────────────────
+# 1) 비밀 파일 자체가 커밋되는 것을 막는다.
+# ────────────────────────────────────────────────
+SECRET_FILES=$(echo "$STAGED" | grep -E '(^|/)(\.env(\..+)?|application-.*local\.(yml|yaml|properties)|application-secret\..*|.*\.(pem|key|jks|p12|keystore))$' | grep -v '\.env\.example$')
+
+if [ -n "$SECRET_FILES" ]; then
+  printf "${RED}✖ 비밀 파일이 커밋 대상에 포함되어 있습니다. (CLAUDE.md 절대규칙 9)${NC}\n"
+  echo "$SECRET_FILES" | sed 's/^/    /'
+  printf "  → ${YELLOW}git restore --staged <파일>${NC} 로 제외하고 .gitignore 를 확인하세요.\n\n"
+  FAILED=1
+fi
+
+# ────────────────────────────────────────────────
+# 2) 추가된 코드 줄에서 하드코딩된 비밀을 찾는다.
+#    ${ENV_VAR} 형태의 참조는 정상이므로 통과시킨다.
+# ────────────────────────────────────────────────
+# .example 템플릿은 pathspec 에서 자연히 제외되고, 주석 줄은 여기서 걸러낸다.
+ADDED_LINES=$(git diff --cached -U0 --diff-filter=ACM -- '*.java' '*.yml' '*.yaml' '*.properties' '*.xml'   | grep '^+'   | grep -v '^+++'   | grep -vE '^\+[[:space:]]*(#|//|\*|<!--)')
+
+if [ -n "$ADDED_LINES" ]; then
+  # JWT 토큰 / AWS 액세스 키
+  TOKEN_HIT=$(echo "$ADDED_LINES" | grep -E 'eyJ[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}')
+  # password / secret 계열에 리터럴 값이 직접 들어간 경우 (${...} 참조는 제외)
+  LITERAL_HIT=$(echo "$ADDED_LINES" | grep -iE '(password|secret|client-secret|private[-_]?key|access[-_]?key)[[:space:]]*[:=][[:space:]]*["'\'']?[^$"'\''[:space:]{][^"'\''[:space:]]{5,}')
+
+  if [ -n "$TOKEN_HIT" ] || [ -n "$LITERAL_HIT" ]; then
+    printf "${RED}✖ 하드코딩된 비밀로 의심되는 값이 있습니다. (CLAUDE.md 절대규칙 9)${NC}\n"
+    [ -n "$TOKEN_HIT" ] && echo "$TOKEN_HIT" | head -5 | cut -c1-100 | sed 's/^/    /'
+    [ -n "$LITERAL_HIT" ] && echo "$LITERAL_HIT" | head -5 | cut -c1-100 | sed 's/^/    /'
+    printf "  → 환경변수로 분리하세요. 예: ${YELLOW}spring.datasource.password=\${DB_PASSWORD}${NC}\n"
+    printf "  → 오탐이면: ${YELLOW}git commit --no-verify${NC}\n\n"
+    FAILED=1
+  fi
+fi
+
+# ────────────────────────────────────────────────
+# 3) 빌드 산출물이 섞여 들어갔는지 확인한다.
+# ────────────────────────────────────────────────
+BUILD_ARTIFACTS=$(echo "$STAGED" | grep -E '^(target/|build/)|\.class$')
+
+if [ -n "$BUILD_ARTIFACTS" ]; then
+  printf "${RED}✖ 빌드 산출물이 커밋 대상에 포함되어 있습니다.${NC}\n"
+  echo "$BUILD_ARTIFACTS" | head -5 | sed 's/^/    /'
+  printf "  → ${YELLOW}git restore --staged <파일>${NC}\n\n"
+  FAILED=1
+fi
+
+# ────────────────────────────────────────────────
+# 4) 큰 파일 경고 (1MB 초과)
+# ────────────────────────────────────────────────
+for FILE in $STAGED; do
+  [ -f "$FILE" ] || continue
+  SIZE=$(wc -c < "$FILE" 2>/dev/null | tr -d ' ')
+  if [ -n "$SIZE" ] && [ "$SIZE" -gt 1048576 ]; then
+    printf "${YELLOW}⚠ 큰 파일입니다 (%s bytes): %s${NC}\n" "$SIZE" "$FILE"
+  fi
+done
+
+if [ "$FAILED" -ne 0 ]; then
+  printf "${RED}커밋이 중단되었습니다.${NC}\n"
+  exit 1
+fi
+
+printf "${GREEN}✔ pre-commit 검사 통과${NC}\n"
+exit 0

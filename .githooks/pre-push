@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# pre-push — 푸시 전 컴파일 검증
+#
+# pre-commit 에 컴파일을 넣으면 커밋마다 수 초씩 지연되므로,
+# 상대적으로 드물게 실행되는 push 시점에 한 번만 검증한다.
+# 우회가 필요하면: git push --no-verify
+#
+
+YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+printf "${YELLOW}⋯ 컴파일 검증 중입니다. 잠시 기다려 주세요...${NC}\n"
+
+if [ -x "./mvnw" ]; then
+  MVN="./mvnw"
+elif [ -f "./mvnw.cmd" ]; then
+  MVN="./mvnw.cmd"
+else
+  printf "${YELLOW}⚠ Maven 래퍼를 찾을 수 없어 컴파일 검증을 건너뜁니다.${NC}\n"
+  exit 0
+fi
+
+if ! $MVN -q -o test-compile; then
+  # 오프라인 모드가 실패하면 (의존성 미수신 등) 온라인으로 재시도한다.
+  if ! $MVN -q test-compile; then
+    printf "${RED}✖ 컴파일에 실패했습니다. 푸시를 중단합니다.${NC}\n"
+    printf "  → ${YELLOW}./mvnw test-compile${NC} 로 오류를 확인하세요.\n"
+    exit 1
+  fi
+fi
+
+printf "${GREEN}✔ 컴파일 검증 통과${NC}\n"
+exit 0

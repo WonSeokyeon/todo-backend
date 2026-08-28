@@ -1,0 +1,31 @@
+# EditorConfig — 에디터/IDE 간 기본 서식 통일
+# 프론트엔드(VS Code)와 백엔드(Eclipse/STS)가 섞여 있으므로
+# 줄바꿈과 인코딩을 여기서 한 번에 고정한다.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Java 는 4칸 들여쓰기 (Spring 관례)
+[*.java]
+indent_size = 4
+
+# Maven 래퍼 / 셸 스크립트는 LF 고정
+[*.{sh,bash}]
+end_of_line = lf
+
+# Windows 배치 파일은 CRLF 여야 정상 동작
+[*.{cmd,bat}]
+end_of_line = crlf
+
+# Markdown 은 줄 끝 공백 2개가 줄바꿈 의미이므로 제거하지 않는다
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml,json,properties}]
+indent_size = 2

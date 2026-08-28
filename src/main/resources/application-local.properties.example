@@ -1,0 +1,12 @@
+# 로컬 개발 설정 템플릿
+#
+# 사용법:
+#   cp application-local.properties.example application-local.properties
+# 후 실제 값을 채운다. (application-local.properties 는 커밋되지 않는다)
+
+# 로컬 PostgreSQL 비밀번호
+spring.datasource.password=여기에_로컬_DB_비밀번호
+
+# 필요 시 아래 항목도 덮어쓸 수 있다.
+# spring.datasource.url=jdbc:postgresql://localhost:5432/todolist_db
+# spring.datasource.username=postgres
