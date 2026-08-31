@@ -1,11 +1,12 @@
 package com.example.todoapp.exception;
 
 import com.example.todoapp.dto.ApiResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.http.ResponseEntity;
 
 /**
  * 모든 예외 응답은 이 한 곳에서만 만든다 (부모 CLAUDE.md 절대규칙 6).
@@ -28,6 +29,13 @@ public class GlobalExceptionHandler {
                 .orElse(ErrorCode.INVALID_INPUT.getDefaultMessage());
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT, message));
+    }
+
+    // JSON 파싱 실패(잘못된 enum 값, 형식이 깨진 바디 등)가 500으로 새지 않도록 막는다.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
+                .body(ApiResponse.error(ErrorCode.INVALID_INPUT, ErrorCode.INVALID_INPUT.getDefaultMessage()));
     }
 
     // BCryptPasswordEncoder가 72바이트 초과 시 던지는 예외 등 안전장치 (CLAUDE.md 4장)
