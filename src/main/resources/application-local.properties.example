@@ -10,6 +10,11 @@ spring.datasource.password=여기에_로컬_DB_비밀번호
 # JWT 서명키 (예: openssl rand -base64 48)
 jwt.secret=여기에_로컬_JWT_시크릿
 
+# Google OAuth2를 실제로 테스트하려면 Google Cloud Console에서 발급받아 채운다.
+# (비워두면 기동은 되지만 /oauth2/authorization/google 호출 시 구글이 거부한다)
+# spring.security.oauth2.client.registration.google.client-id=여기에_구글_클라이언트_ID
+# spring.security.oauth2.client.registration.google.client-secret=여기에_구글_클라이언트_시크릿
+
 # 필요 시 아래 항목도 덮어쓸 수 있다.
 # spring.datasource.url=jdbc:postgresql://localhost:5432/todolist_db
 # spring.datasource.username=postgres
