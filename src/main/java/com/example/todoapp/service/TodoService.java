@@ -26,17 +26,22 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final HtmlSanitizer htmlSanitizer;
+    private final AttachmentService attachmentService;
 
     @Transactional
     public TodoResponse create(User user, TodoCreateRequest request) {
+        String content = htmlSanitizer.sanitize(request.content());
         Todo todo = Todo.create(
                 user,
                 request.title(),
-                htmlSanitizer.sanitize(request.content()),
+                content,
                 request.priority(),
                 request.dueDate()
         );
-        return TodoResponse.from(todoRepository.save(todo));
+        todoRepository.save(todo);
+        // 연결 처리는 save 이후에 한다 — 그 전에는 todo.id가 없어 첨부에 채울 값이 없다.
+        attachmentService.syncWithTodo(user.getId(), todo, htmlSanitizer.collectAttachmentIds(content));
+        return TodoResponse.from(todo);
     }
 
     @Transactional(readOnly = true)
@@ -54,12 +59,15 @@ public class TodoService {
     @Transactional
     public TodoResponse update(Long userId, Long id, TodoUpdateRequest request) {
         Todo todo = getOwned(userId, id);
+        String content = htmlSanitizer.sanitize(request.content());
         todo.updateContent(
                 request.title(),
-                htmlSanitizer.sanitize(request.content()),
+                content,
                 request.priority(),
                 request.dueDate()
         );
+        // 본문에 남은 첨부는 연결하고, 사라진 첨부는 Soft Delete한다.
+        attachmentService.syncWithTodo(userId, todo, htmlSanitizer.collectAttachmentIds(content));
         // @LastModifiedDate는 @PreUpdate(flush 시점)에 채워진다. flush 없이 바로 응답을
         // 만들면 updatedAt이 갱신 전 값으로 직렬화된다(DB에는 커밋 시 정상 반영되지만
         // 이 응답만 stale — 실측 확인).

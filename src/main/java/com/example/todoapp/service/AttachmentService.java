@@ -2,6 +2,7 @@ package com.example.todoapp.service;
 
 import com.example.todoapp.domain.Attachment;
 import com.example.todoapp.domain.AttachmentRepository;
+import com.example.todoapp.domain.Todo;
 import com.example.todoapp.domain.User;
 import com.example.todoapp.dto.AttachmentPresignRequest;
 import com.example.todoapp.dto.AttachmentPresignResponse;
@@ -219,14 +220,33 @@ public class AttachmentService {
     public record ViewPayload(Resource resource, String contentType, String filename) {
     }
 
-    /** 본문 연결 처리(6단계)에서 쓸 소유 첨부 조회. */
-    @Transactional(readOnly = true)
-    public List<Attachment> findOwnedByIds(Long userId, Set<Long> ids) {
-        if (ids.isEmpty()) {
-            return List.of();
+    /**
+     * 할 일 본문과 첨부의 연결 상태를 맞춘다. TodoService가 저장 직전에 호출한다.
+     *
+     * <p>본문에 남아 있는 첨부는 LINKED로 전환하고, 이 할 일에 연결돼 있었으나
+     * 본문에서 사라진 첨부는 Soft Delete한다. 물리 파일은 지우지 않는다 —
+     * 유예 기간 뒤 정리 배치가 삭제한다 (CLAUDE.md 4장).
+     *
+     * @param attachmentIds 정화가 끝난 본문에서 수집한 첨부 ID
+     * @throws BusinessException 요청한 첨부 중 하나라도 없거나 타인 소유이면 404
+     */
+    @Transactional
+    public void syncWithTodo(Long userId, Todo todo, Set<Long> attachmentIds) {
+        if (!attachmentIds.isEmpty()) {
+            List<Attachment> found = attachmentRepository.findByIdInAndDeletedAtIsNull(attachmentIds);
+            // 없는 id가 섞여 있거나 남의 첨부가 섞여 있으면 통째로 거부한다.
+            // 일부만 연결하면 본문에는 남아 있는데 조회되지 않는 이미지가 생긴다.
+            boolean allOwned = found.size() == attachmentIds.size()
+                    && found.stream().allMatch(attachment -> attachment.isOwnedBy(userId));
+            if (!allOwned) {
+                throw new BusinessException(ErrorCode.ATTACHMENT_NOT_FOUND);
+            }
+            found.forEach(attachment -> attachment.link(todo));
         }
-        return attachmentRepository.findByIdInAndDeletedAtIsNull(ids).stream()
-                .filter(attachment -> attachment.isOwnedBy(userId))
-                .toList();
+
+        // 본문에서 사라진 첨부를 정리한다. 위에서 link한 것들은 attachmentIds에 있으므로 제외된다.
+        attachmentRepository.findByTodoIdAndDeletedAtIsNull(todo.getId()).stream()
+                .filter(attachment -> !attachmentIds.contains(attachment.getId()))
+                .forEach(Attachment::softDelete);
     }
 }

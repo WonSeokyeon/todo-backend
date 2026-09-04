@@ -8,10 +8,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 // @DataJpaTest가 별도 @Configuration 클래스는 로드하지 않으므로
 // @EnableJpaAuditing과 UTC DateTimeProvider 빈 모두 반드시 이 메인 클래스에 둔다.
 @EnableJpaAuditing(dateTimeProviderRef = "utcDateTimeProvider")
+// 첨부 정리 배치(AttachmentCleanupScheduler)를 돌리기 위해 필요하다.
+// 이 프로젝트에서 @Scheduled를 쓰는 곳은 그 하나뿐이다.
+@EnableScheduling
 @SpringBootApplication
 public class TodoBackendApplication {
 
