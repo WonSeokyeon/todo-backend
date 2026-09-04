@@ -46,6 +46,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
                         .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                        // 첨부 업로드·조회는 Authorization 헤더가 아니라 쿼리의 서명 토큰으로 인증한다.
+                        // S3 presigned URL은 헤더가 붙으면 서명이 깨지고, img 태그는 헤더를 실을 수 없다.
+                        // 컨트롤러가 토큰을 직접 검증한다 — /auth/refresh와 같은 패턴이다 (CLAUDE.md 5장).
+                        .requestMatchers("/api/v1/attachments/*/upload", "/api/v1/attachments/*/raw").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
