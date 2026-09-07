@@ -29,7 +29,20 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<!-- Maven Central 최신 안정 버전 확인 후 고정 (2026-09-07, CLAUDE.md 3장 — 기억에 의존하지 않는다) -->
+		<awssdk.version>2.54.13</awssdk.version>
 	</properties>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>software.amazon.awssdk</groupId>
+				<artifactId>bom</artifactId>
+				<version>${awssdk.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<!-- 헬스체크 전용. 노출 엔드포인트는 application.properties 에서 health 로 제한한다. -->
 		<dependency>
@@ -126,6 +139,14 @@
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
 			<version>1.21.1</version>
+		</dependency>
+
+		<!-- Phase 13 — S3 전환. 버전은 위 BOM(dependencyManagement)이 관리한다.
+		     S3Presigner는 별도 아티팩트가 아니라 이 s3 모듈에 포함되어 있다
+		     (Maven Central에 software.amazon.awssdk:s3-presigner는 존재하지 않는다 — 2026-09-07 확인). -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
 		</dependency>
 
 	</dependencies>

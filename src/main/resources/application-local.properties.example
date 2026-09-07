@@ -18,3 +18,7 @@ jwt.secret=여기에_로컬_JWT_시크릿
 # 필요 시 아래 항목도 덮어쓸 수 있다.
 # spring.datasource.url=jdbc:postgresql://localhost:5432/todolist_db
 # spring.datasource.username=postgres
+
+# Phase 13 — S3 전환을 로컬에서 테스트하려면(app.storage.type=s3) 버킷명을 채운다.
+# 자격증명은 여기 두지 않는다 — aws configure로 만든 ~/.aws/credentials를 기본 체인이 찾는다.
+# app.storage.s3.bucket=여기에_S3_버킷명
