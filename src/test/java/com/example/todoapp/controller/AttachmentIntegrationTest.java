@@ -216,6 +216,26 @@ class AttachmentIntegrationTest {
     }
 
     @Test
+    @DisplayName("token 파라미터가 없으면 500이 아니라 400")
+    void missingTokenParamIsBadRequest() throws Exception {
+        // 필수 쿼리 파라미터 누락은 서버 오류가 아니라 잘못된 요청이다.
+        // 전용 핸들러가 없으면 catch-all에 걸려 500 INTERNAL_ERROR가 나간다 (CLAUDE.md 11장).
+        mockMvc.perform(get(ATTACHMENTS_URL + "/1/raw"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+    }
+
+    @Test
+    @DisplayName("경로 id가 숫자가 아니면 500이 아니라 400")
+    void nonNumericIdIsBadRequest() throws Exception {
+        String token = signupAndGetToken(uniqueEmail());
+
+        mockMvc.perform(post(ATTACHMENTS_URL + "/abc/complete").header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"));
+    }
+
+    @Test
     @DisplayName("인증 없이 presign을 호출하면 401")
     void presignRequiresAuth() throws Exception {
         mockMvc.perform(post(ATTACHMENTS_URL + "/presign")

@@ -32,6 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### Eclipse ###
+.metadata/
+
 ### 환경변수 / 비밀 (CLAUDE.md 절대규칙 9) ###
 .env
 .env.*
