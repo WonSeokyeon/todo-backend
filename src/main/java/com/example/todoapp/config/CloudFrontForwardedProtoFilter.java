@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
@@ -23,6 +24,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * request 객체가 알 방법이 없어, OAuth2 redirect_uri가 http://로 생성되어
  * 구글의 승인된 리디렉션 URI(https)와 어긋난다.
  */
+@Slf4j
 public class CloudFrontForwardedProtoFilter extends OncePerRequestFilter {
 
     private static final String CLOUDFRONT_REQUEST_ID_HEADER = "X-Amz-Cf-Id";
@@ -31,6 +33,9 @@ public class CloudFrontForwardedProtoFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         boolean viaCloudFront = request.getHeader(CLOUDFRONT_REQUEST_ID_HEADER) != null;
+        // TEMP DEBUG (2026-09-10) — 이 필터가 실제로 실행되는지, 조건이 맞는지 확인 후 제거할 것
+        log.info("[TEMP-DEBUG-WRAP] uri={} viaCloudFront={} beforeScheme={}",
+                request.getRequestURI(), viaCloudFront, request.getScheme());
         if (viaCloudFront) {
             filterChain.doFilter(new HttpsForcedRequestWrapper(request), response);
         } else {
