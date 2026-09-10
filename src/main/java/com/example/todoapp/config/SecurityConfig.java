@@ -46,10 +46,9 @@ public class SecurityConfig {
     public FilterRegistrationBean<Filter> tempDebugFilter() {
         FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>((request, response, chain) -> {
             if (request instanceof jakarta.servlet.http.HttpServletRequest httpRequest) {
-                log.info("[TEMP-DEBUG-EARLY] uri={} scheme={} isSecure={} CloudFront-Forwarded-Proto={} X-Forwarded-Proto={} Host={}",
+                log.info("[TEMP-DEBUG-EARLY] uri={} scheme={} isSecure={} X-Amz-Cf-Id={} Host={}",
                         httpRequest.getRequestURI(), httpRequest.getScheme(), httpRequest.isSecure(),
-                        httpRequest.getHeader("CloudFront-Forwarded-Proto"), httpRequest.getHeader("X-Forwarded-Proto"),
-                        httpRequest.getHeader("Host"));
+                        httpRequest.getHeader("X-Amz-Cf-Id"), httpRequest.getHeader("Host"));
             }
             chain.doFilter(request, response);
         });
