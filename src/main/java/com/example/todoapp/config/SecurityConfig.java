@@ -29,20 +29,31 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // TEMP DEBUG (2026-09-10) — Spring Security 필터 체인보다 앞(컨테이너 레벨)에서
-    // 실제로 도착하는 스킴/포워딩 헤더를 확인한다. 원인 확인 후 반드시 제거할 것.
+    // CloudFront가 커스텀 오리진 헤더로 지정한 X-Forwarded-Proto를 실제로는 오리진에
+    // 전달하지 않아(2026-09-10 실측), CloudFront-Forwarded-Proto로 스킴을 보정하는
+    // 필터를 Security 필터 체인보다도 앞(컨테이너 레벨)에 둔다.
+    @Bean
+    public FilterRegistrationBean<CloudFrontForwardedProtoFilter> cloudFrontForwardedProtoFilter() {
+        FilterRegistrationBean<CloudFrontForwardedProtoFilter> registration =
+                new FilterRegistrationBean<>(new CloudFrontForwardedProtoFilter());
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
+
+    // TEMP DEBUG (2026-09-10) — 위 보정 필터 적용 후 실제로 scheme이 바뀌었는지 확인한다.
+    // 원인 확인 후 반드시 제거할 것.
     @Bean
     public FilterRegistrationBean<Filter> tempDebugFilter() {
         FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>((request, response, chain) -> {
             if (request instanceof jakarta.servlet.http.HttpServletRequest httpRequest) {
-                log.info("[TEMP-DEBUG-EARLY] uri={} scheme={} isSecure={} X-Forwarded-Proto={} X-Forwarded-Host={} Host={}",
+                log.info("[TEMP-DEBUG-EARLY] uri={} scheme={} isSecure={} CloudFront-Forwarded-Proto={} X-Forwarded-Proto={} Host={}",
                         httpRequest.getRequestURI(), httpRequest.getScheme(), httpRequest.isSecure(),
-                        httpRequest.getHeader("X-Forwarded-Proto"), httpRequest.getHeader("X-Forwarded-Host"),
+                        httpRequest.getHeader("CloudFront-Forwarded-Proto"), httpRequest.getHeader("X-Forwarded-Proto"),
                         httpRequest.getHeader("Host"));
             }
             chain.doFilter(request, response);
         });
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         return registration;
     }
 
