@@ -1,6 +1,7 @@
 package com.example.todoapp.exception;
 
 import com.example.todoapp.dto.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -14,6 +15,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * 모든 예외 응답은 이 한 곳에서만 만든다 (부모 CLAUDE.md 절대규칙 6).
  * 컨트롤러에서 개별 try-catch로 응답을 조립하지 않는다.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -64,8 +66,10 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ErrorCode.INVALID_INPUT, e.getMessage()));
     }
 
+    // 5xx는 원인 추적이 목적이므로 스택 트레이스를 포함해 error로 남긴다 (CLAUDE.md 11장).
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+        log.error("처리되지 않은 예외가 발생했습니다.", e);
         return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.getStatus())
                 .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR, ErrorCode.INTERNAL_ERROR.getDefaultMessage()));
     }
