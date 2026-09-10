@@ -1,12 +1,16 @@
 package com.example.todoapp.config;
 
 import com.example.todoapp.service.CustomOAuth2UserService;
+import jakarta.servlet.Filter;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -20,9 +24,27 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * Phase 1의 최소 permitAll(swagger·api-docs·error·actuator/health)을 그대로 유지하며
  * Phase 3에서 CSRF 비활성화·STATELESS 세션·CORS·JWT 필터·인증 예외 처리를 확장한다 (CLAUDE.md 6장).
  */
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
+
+    // TEMP DEBUG (2026-09-10) — Spring Security 필터 체인보다 앞(컨테이너 레벨)에서
+    // 실제로 도착하는 스킴/포워딩 헤더를 확인한다. 원인 확인 후 반드시 제거할 것.
+    @Bean
+    public FilterRegistrationBean<Filter> tempDebugFilter() {
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>((request, response, chain) -> {
+            if (request instanceof jakarta.servlet.http.HttpServletRequest httpRequest) {
+                log.info("[TEMP-DEBUG-EARLY] uri={} scheme={} isSecure={} X-Forwarded-Proto={} X-Forwarded-Host={} Host={}",
+                        httpRequest.getRequestURI(), httpRequest.getScheme(), httpRequest.isSecure(),
+                        httpRequest.getHeader("X-Forwarded-Proto"), httpRequest.getHeader("X-Forwarded-Host"),
+                        httpRequest.getHeader("Host"));
+            }
+            chain.doFilter(request, response);
+        });
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
+    }
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
