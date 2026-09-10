@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * 필터 단계의 예외는 GlobalExceptionHandler가 잡지 못하므로, 만료 여부를 요청 attribute에 남겨
  * JwtAuthenticationEntryPoint가 TOKEN_EXPIRED와 그 외 UNAUTHORIZED를 구분해 응답하게 한다.
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -35,10 +33,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        // TEMP DEBUG (2026-09-10) — CloudFront 뒤에서 스킴이 왜 https로 안 바뀌는지 확인 후 제거할 것
-        log.info("[TEMP-DEBUG] uri={} scheme={} isSecure={} X-Forwarded-Proto={} X-Forwarded-Host={} Host={}",
-                request.getRequestURI(), request.getScheme(), request.isSecure(),
-                request.getHeader("X-Forwarded-Proto"), request.getHeader("X-Forwarded-Host"), request.getHeader("Host"));
         String token = resolveToken(request);
 
         if (token != null) {
