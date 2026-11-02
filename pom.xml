@@ -152,8 +152,6 @@
 	</dependencies>
 
 	<build>
-		<!-- EC2 systemd 배포 스크립트가 버전 무관 고정 경로(/etc/todolist/app.jar)를 참조하므로 파일명을 고정한다. -->
-		<finalName>app</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

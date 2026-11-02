@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
  * S3 클라이언트 빈 (Phase 13). app.storage.type=s3 일 때만 등록한다.
  *
  * <p>자격증명은 기본 체인(DefaultCredentialsProvider)에 맡긴다 — 로컬은 {@code aws configure}로 만든
- * {@code ~/.aws/credentials}, 운영은 EC2 인스턴스에 붙은 IAM Role을 자동으로 찾는다. 키를 코드나
+ * {@code ~/.aws/credentials}를 찾는다. 키를 코드나
  * 설정 파일에 넣지 않는다 (CLAUDE.md 5장, 부모 CLAUDE.md 절대규칙 9).
  */
 @Configuration

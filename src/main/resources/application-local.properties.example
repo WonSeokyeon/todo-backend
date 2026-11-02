@@ -15,8 +15,7 @@ jwt.secret=여기에_로컬_JWT_시크릿
 # spring.security.oauth2.client.registration.google.client-id=여기에_구글_클라이언트_ID
 # spring.security.oauth2.client.registration.google.client-secret=여기에_구글_클라이언트_시크릿
 
-# 필요 시 아래 항목도 덮어쓸 수 있다. 로컬 대신 RDS를 기본으로 쓰려면 url·password를
-# RDS 값으로 채운다(username은 보통 postgres로 동일).
+# 필요 시 아래 항목도 덮어쓸 수 있다.
 # spring.datasource.url=jdbc:postgresql://localhost:5432/todolist_db
 # spring.datasource.username=postgres
 

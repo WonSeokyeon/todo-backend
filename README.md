@@ -51,7 +51,6 @@ cp src/main/resources/application-local.properties.example src/main/resources/ap
 | `application-local.properties` | 개인 로컬 값 (DB 비밀번호 등) | ❌ 제외 |
 | `application-local.properties.example` | 위 파일의 템플릿 | ✅ 커밋 |
 
-배포 환경에서는 `SPRING_PROFILES_ACTIVE` 와 `DB_PASSWORD` 등의 환경변수로 값을 주입합니다.
 
 ---
 
